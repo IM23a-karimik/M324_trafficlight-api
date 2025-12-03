@@ -13,7 +13,7 @@ See below the steps/commands
 docker ps 
 #--> should show jenkins_dind as running container
 docker exec --privileged -it jenkins_dind bash
-#--> root-prompt should appear
+#--> root-prompt should appear  
 dockerd&
 ps aux|grep dockerd
 docker info

@@ -1,56 +1,28 @@
-# -------------------------------------------------------------
-# Dockerfile 3: Install Docker Engine (DinD) & Scripts
-# -------------------------------------------------------------
-
-# TODO: Ensure this matches the image name from Dockerfile 2
-# If you used my 01-params.sh, this should be consistent.
+# Dockerfile3: Install Docker & Helpers
 ARG IMG="readydocker1/jenkins_dind"
-
-# We build upon the version 2 image (which has Jenkins)
 FROM ${IMG}:v2
 
 USER root
 
-# 1. Install prerequisites
-RUN apt-get update && \
-    apt-get -y install \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg2 \
-    software-properties-common
+# Install Docker Prerequisites
+RUN apt-get update && apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
 
-# 2. Add Docker’s official GPG key
+# Add Docker Repo
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
 
-# 3. Add Docker Repository
-RUN add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/debian \
-   $(lsb_release -cs) \
-   stable"
+# Install Docker Engine
+RUN apt-get update && apt-get -y install docker-ce docker-ce-cli containerd.io
 
-# 4. Install Docker Engine
-RUN apt-get update && \
-    apt-get -y install docker-ce docker-ce-cli containerd.io
-
-# 5. Add jenkins user to docker group
+# Add jenkins user to docker group
 RUN usermod -aG docker jenkins
 
-# 6. COPY Helper Scripts
-# We put them in /tmp/ so you can run them manually if you want
-# e.g., inside the container: sh /tmp/05a_start-docker.sh
+# Copy Helper Scripts
 COPY helpers/05a_start-docker.sh /tmp/05a_start-docker.sh
 COPY helpers/05b_start-jenkins.sh /tmp/05b_start-jenkins.sh
+RUN chmod +x /tmp/05a_start-docker.sh /tmp/05b_start-jenkins.sh
 
-# 7. Make scripts executable
-RUN chmod +x /tmp/05a_start-docker.sh && \
-    chmod +x /tmp/05b_start-jenkins.sh
+# Cleanup
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 8. Cleanup
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# 9. KEEP ALIVE
-# We sleep infinity to satisfy the exercise requirement of logging in
-# and starting services manually.
 CMD ["sleep", "infinity"]

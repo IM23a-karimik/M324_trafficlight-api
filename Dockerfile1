@@ -1,38 +1,22 @@
-# https://adoptium.net/de/installation/linux/#_deb_installation_on_debian_or_ubuntu
-# Ubuntu with certificate, tools and Java runtime
+# Dockerfile1: Ubuntu + Java
 FROM ubuntu:20.04
 
 USER root
-
-# 1. PREVENT HANGING: Set frontend to noninteractive to avoid Timezone prompts
 ARG DEBIAN_FRONTEND=noninteractive
 
-# 2. Install dependencies
-RUN apt-get update \
-    && apt-get -y install apt-transport-https \
-        ca-certificates \
-        curl \
-        wget \
-        gnupg2 \
-        software-properties-common \
-    && apt-get clean \
+# Install dependencies
+RUN apt-get update && apt-get -y install \
+    apt-transport-https ca-certificates curl wget gnupg2 software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Add Adoptium (Java) GPG Key
+# Add Adoptium GPG Key and Repo
 RUN mkdir -p /etc/apt/keyrings
-RUN wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public |\
-     tee /etc/apt/keyrings/adoptium.asc
+RUN wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
+RUN echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
 
-# 4. Add Repository
-RUN echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" |\
-     tee /etc/apt/sources.list.d/adoptium.list
+# Install Java
+RUN apt-get update && apt-get -y install temurin-17-jdk && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 5. Install Java
-# Added cleanup at the end to keep image small
-RUN apt-get update && \
-    apt-get -y install temurin-17-jdk && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# 6. KEEP ALIVE: This ensures the container stays running so you can log in
+# Keep container running
 CMD ["sleep", "infinity"]
