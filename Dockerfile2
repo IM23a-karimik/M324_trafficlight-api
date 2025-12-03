@@ -1,0 +1,36 @@
+# -------------------------------------------------------------
+# Dockerfile 2: Install Jenkins Controller
+# -------------------------------------------------------------
+
+# TODO: CHANGE 'readydocker1' to YOUR actual docker hub username!
+# This must match what you built in Dockerfile 1.
+ARG IMG="readydocker1/jenkins_dind"
+
+# Use the image built in step 1 (tagged as :v1)
+FROM ${IMG}:v1
+
+USER root
+
+# 1. Add Jenkins Repository Key (2023 version is correct for Stable)
+RUN wget -O /usr/share/keyrings/jenkins-keyring.asc \
+      https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+
+# 2. Add Jenkins Repository
+RUN echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+        https://pkg.jenkins.io/debian-stable binary/ |\
+         tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+# 3. Install Jenkins and Tools
+# Note: 'ufw' (Firewall) is usually useless inside Docker, but harmless if required by your exercise.
+RUN apt-get update && \
+  apt-get -y install ufw openssh-server openssh-client jenkins && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
+# 4. Expose the Jenkins port (Optional, but good practice)
+EXPOSE 8080
+
+# 5. KEEP ALIVE
+# We explicitly set this again to ensure the container runs indefinitely.
+# This allows you to 'docker exec' into it and start jenkins manually as per instructions.
+CMD ["sleep", "infinity"]
